@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const fs = require('fs');
 const { spawn  } = require("child_process");
 
 const app = express();
@@ -13,6 +14,16 @@ let cppProcess;
 app.use(express.json());
 app.use(cors());
 
+//APP
+app.get('/videos', (req, res) => {
+  const videos = fs.readdirSync('videos');
+
+  const videosMap = videos.map(video => {
+    return `${__dirname}${'/'}videos${'/'}${video}`
+  })
+
+  res.json(videosMap)
+});
 
 // WebSocket
 wss.on('connection', function connection(ws) {
