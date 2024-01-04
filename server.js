@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const fs = require('fs');
-const { spawn  } = require("child_process");
+const { spawn } = require("child_process");
 
 const app = express();
 const server = http.createServer(app);
@@ -104,6 +104,7 @@ app.get('/videos', (req, res) => {
 
   const videosMap = videos.map(video => {
     return `${__dirname}${'/'}videos${'/'}${video}`
+    // return `C:/Users/bruno.carvalho/MidasCorp/WebServices-server${'/'}videos${'/'}${video}`
   })
 
   res.json(videosMap)
@@ -129,22 +130,22 @@ wss.on('connection', function connection(ws) {
 
       cppProcess.stderr.on('data', (data) => {
         console.error(`Erro do programa C++: ${data}`);
-          wss.clients.forEach(function each(client) {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-              client.send('program_finalized');
-            }
-          });
+        wss.clients.forEach(function each(client) {
+          if (client !== ws && client.readyState === WebSocket.OPEN) {
+            client.send('program_finalized');
+          }
+        });
         // Aqui você pode lidar com os erros do programa C++
       });
 
       cppProcess.on('close', (code) => {
         console.log(`Programa C++ encerrado com código de saída ${code}`);
-        
-          wss.clients.forEach(function each(client) {
-          
-              client.send('program_finalized');
-            
-          });
+
+        wss.clients.forEach(function each(client) {
+
+          client.send('program_finalized');
+
+        });
       });
     }
 
@@ -177,16 +178,31 @@ app.post('/terminateProgram', (req, res) => {
 });
 
 
-  const terminateCppProgram = () => {
-    // var proc = require('child_process').spawn('mongod');
-    cppProcess.kill('SIGINT');
+const terminateCppProgram = () => {
+  // var proc = require('child_process').spawn('mongod');
+  cppProcess.kill('SIGINT');
 
-    wss.clients.forEach(function each(client) {
-          
-      client.send('program_finalized');
-    
+  wss.clients.forEach(function each(client) {
+
+    client.send('program_finalized');
+
   });
-  };
+};
+
+app.delete('/videos/:videoName', (req, res) => {
+  const videoName = req.params.videoName; // Obtém o nome do vídeo dos parâmetros da URL
+  const videoPath = path.join('/videos', videoName); // Caminho completo para o vídeo
+
+  fs.unlink(videoPath, (err) => {
+    if (err) {
+      console.error('Erro ao excluir o vídeo:', err);
+      res.status(500).json({ error: 'Erro ao excluir o vídeo' });
+    } else {
+      console.log('Vídeo excluído com sucesso:', videoName);
+      res.status(200).json({ message: 'Vídeo excluído com sucesso' });
+    }
+  });
+});
 
 
 // Inicia o servidor
