@@ -58,6 +58,40 @@ app.use(cors());
 //   console.log("Listening on port 8000!");
 // });
 
+app.get('/spawn', (req, res) => {
+  console.log('Rota /spawn foi acessada. Iniciando o programa C++...');
+
+  // Iniciar o programa C++ como um processo separado
+  cppProcess = spawn('/home/rasp/project/darknet_test/main');
+
+  cppProcess.stdout.on('data', (data) => {
+    console.log(`Saída do programa C++: ${data}`);
+    // Aqui você pode enviar a saída para o cliente WebSocket, se necessário
+  });
+
+  cppProcess.stderr.on('data', (data) => {
+    console.error(`Erro do programa C++: ${data}`);
+    wss.clients.forEach(function each(client) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send('program_error');
+      }
+    });
+    // Aqui você pode lidar com os erros do programa C++
+  });
+
+  cppProcess.on('close', (code) => {
+    console.log(`Programa C++ encerrado com código de saída ${code}`);
+
+    wss.clients.forEach(function each(client) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send('program_finalized');
+      }
+    });
+  });
+
+  res.status(200).json({ message: 'Programa C++ iniciado' });
+});
+
 
 //STREAM 2
 
@@ -118,35 +152,10 @@ wss.on('connection', function connection(ws) {
     const msgString = Buffer.from(message).toString();
     console.log('Mensagem recebida do cliente:', msgString);
 
+    // Tratamento das mensagens recebidas
     if (msgString === 'roudProgram') {
-      console.log('Etapa para rodar o c++');
-      // Inicie o programa C++ como um processo separado
-      cppProcess = spawn('/home/rasp/project/darknet_test/main');
-
-      cppProcess.stdout.on('data', (data) => {
-        console.log(`Saída do programa C++: ${data}`);
-        // Aqui você pode enviar a saída para o cliente WebSocket, se necessário
-      });
-
-      cppProcess.stderr.on('data', (data) => {
-        console.error(`Erro do programa C++: ${data}`);
-        wss.clients.forEach(function each(client) {
-          if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send('program_finalized');
-          }
-        });
-        // Aqui você pode lidar com os erros do programa C++
-      });
-
-      cppProcess.on('close', (code) => {
-        console.log(`Programa C++ encerrado com código de saída ${code}`);
-
-        wss.clients.forEach(function each(client) {
-
-          client.send('program_finalized');
-
-        });
-      });
+      // Se a mensagem for 'roudProgram', não será mais necessário iniciar o programa aqui
+      console.log('Agora a inicialização do programa é realizada pela rota /spawn');
     }
 
     // Broadcast da mensagem recebida para todos os clientes conectados
