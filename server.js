@@ -92,6 +92,24 @@ app.get('/spawn', (req, res) => {
   res.status(200).json({ message: 'Programa C++ iniciado' });
 });
 
+// Rota para baixar um vídeo específico pelo seu nome
+app.get('/videos/:videoName', (req, res) => {
+  // const { videoName } = req.query
+  const videoName = req.params.videoName; 
+  
+  console.log('VIDEO', videoName)
+  const videoPath = path.join('videos', videoName); // Caminho completo para o vídeo
+
+  res.download(videoPath, (err) => {
+    if (err) {
+      console.error('Erro ao baixar o vídeo:', err);
+      res.status(500).json({ error: 'Erro ao baixar o vídeo' });
+    } else {
+      console.log('Vídeo enviado com sucesso:', videoName);
+    }
+  });
+});
+
 
 //STREAM 2
 
@@ -198,8 +216,9 @@ const terminateCppProgram = () => {
   });
 };
 
-app.delete('/videos/:videoName', (req, res) => {
+app.delete('/videodel/:videoName', (req, res) => {
   const videoName = req.params.videoName; // Obtém o nome do vídeo dos parâmetros da URL
+  console.log('EEEE', videoName)
   const videoPath = path.join('/videos', videoName); // Caminho completo para o vídeo
 
   fs.unlink(videoPath, (err) => {
